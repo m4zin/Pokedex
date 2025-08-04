@@ -16,7 +16,6 @@ type cliCommand struct {
 var Commands = make(map[string]cliCommand)
 var currLocationAreasUrl = api.PokeApiBaseUrl + api.LocationAreaPath
 var previous string
-var currLocations []string
 
 func commandHelp(args []string) error {
 	fmt.Println("Welcome to the Pokedex!")
@@ -33,12 +32,9 @@ func commandMap(args []string) error {
 		log.Fatalf("error fetching location areas: %v", err)
 	}
 
-	var tempLocations []string
 	for _, v := range data.Results {
-		tempLocations = append(tempLocations, v.Name)
 		fmt.Println(v.Name)
 	}
-	currLocations = tempLocations
 	if data.Previous != nil {
 		previous = *data.Previous
 	} else {
@@ -57,12 +53,9 @@ func commandMapB(args []string) error {
 	if err != nil {
 		log.Fatalf("error fetching location areas: %v", err)
 	}
-	var tempLocations []string
 	for _, v := range data.Results {
-		tempLocations = append(tempLocations, v.Name)
 		fmt.Println(v.Name)
 	}
-	currLocations = tempLocations
 	return nil
 }
 
@@ -71,25 +64,16 @@ func commandExplore(args []string) error {
 		fmt.Println("Expecting a single location area")
 		return nil
 	}
-	if len(currLocations) == 0 {
-		fmt.Println("Run map first to get list of locations")
-		return nil
+	fmt.Println("Exploring " + args[0] + "...")
+	data, err := api.GetPokemonsAtLocation(api.PokeApiBaseUrl + api.LocationAreaPath + "/" + args[0])
+	if err != nil {
+		return fmt.Errorf("error fetching pokemons at location: %w", err)
 	}
-	for _, v := range currLocations {
-		if v == args[0] {
-			fmt.Println("Exploring " + args[0] + "...")
-			data, err := api.GetPokemonsAtLocation(api.PokeApiBaseUrl + api.LocationAreaPath + "/" + args[0])
-			if err != nil {
-				return fmt.Errorf("error fetching pokemons at location: %w", err)
-			}
-			fmt.Println("Found Pokemon:")
-			for _, v := range data.PokemonEncounters {
-				fmt.Println("-", v.Pokemon.Name)
-			}
-			return nil
-		}
+	fmt.Println("Found Pokemon:")
+	for _, v := range data.PokemonEncounters {
+		fmt.Println("-", v.Pokemon.Name)
 	}
-	return fmt.Errorf("could not find location area in map")
+	return nil
 }
 
 func CommandNotFound(args []string) {
