@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"pokedex/api"
+	"pokedex/helper"
 )
 
 type cliCommand struct {
@@ -13,6 +14,7 @@ type cliCommand struct {
 	Callback    func(args []string) error
 }
 
+var pokedex = make(map[string]api.Pokemon)
 var Commands = make(map[string]cliCommand)
 var currLocationAreasUrl = api.PokeApiBaseUrl + api.LocationAreaPath
 var previous string
@@ -76,6 +78,50 @@ func commandExplore(args []string) error {
 	return nil
 }
 
+func commandCatch(args []string) error {
+	if len(args) != 1 {
+		fmt.Println("Expecting a pokemon")
+		return nil
+	}
+	fmt.Printf("Throwing a Pokeball at %v...\n", args[0])
+	data, err := api.GetPokemon(api.PokeApiBaseUrl + api.PokemonPath + "/" + args[0])
+	if err != nil {
+		return fmt.Errorf("error fetching pokemon: %w", err)
+	}
+	attempt := helper.AttemptCatch(data.BaseExperience)
+	if attempt {
+		pokedex[args[0]] = data
+		fmt.Printf("%v was caught!\n", args[0])
+	} else {
+		fmt.Printf("%v escaped!\n", args[0])
+	}
+	return nil
+}
+
+func commandInspect(args []string) error {
+	if len(args) != 1 {
+		fmt.Println("Expecting a pokemon")
+		return nil
+	}
+	val, ok := pokedex[args[0]]
+	if ok {
+		helper.PrettyPrint(val)
+	} else {
+		fmt.Println("you have not caught that pokemon")
+	}
+	return nil
+}
+
+func commandPokedex(args []string) error {
+	if len(pokedex) > 0 {
+		fmt.Println("Your pokedex:")
+		for _, v := range pokedex {
+			fmt.Println("-", v.Name)
+		}
+	}
+	return nil
+}
+
 func CommandNotFound(args []string) {
 	fmt.Println("Could not find command, try again")
 }
@@ -111,5 +157,20 @@ func InitCommands() {
 		name:        "explore",
 		description: "Displays the pokemons present in a location area",
 		Callback:    commandExplore,
+	}
+	Commands["catch"] = cliCommand{
+		name:        "catch",
+		description: "Catches a pokemon",
+		Callback:    commandCatch,
+	}
+	Commands["inspect"] = cliCommand{
+		name:        "inspect",
+		description: "Inspects a caught pokemon",
+		Callback:    commandInspect,
+	}
+	Commands["pokedex"] = cliCommand{
+		name:        "pokedex",
+		description: "Prints all the caught pokemons",
+		Callback:    commandPokedex,
 	}
 }

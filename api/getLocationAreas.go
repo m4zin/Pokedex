@@ -42,7 +42,6 @@ func GetLocationAreas(url string) (LocationAreasResponse, error) {
 		return LocationAreasResponse{}, fmt.Errorf("error reading response body: %w", err)
 	}
 
-	// NOTE: check if the request actually succeeded
 	if res.StatusCode != http.StatusOK {
 		return LocationAreasResponse{}, fmt.Errorf("unexpected status code: %d %s", res.StatusCode, http.StatusText(res.StatusCode))
 	}

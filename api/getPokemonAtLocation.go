@@ -21,11 +21,11 @@ func GetPokemonsAtLocation(url string) (EncounterResponse, error) {
 	cachedData, ok := SharedCache.Get(url)
 
 	if ok {
-		locationAreas := EncounterResponse{}
-		if err := json.Unmarshal(cachedData, &locationAreas); err != nil {
+		encounters := EncounterResponse{}
+		if err := json.Unmarshal(cachedData, &encounters); err != nil {
 			return EncounterResponse{}, fmt.Errorf("error unmarshaling json: %w", err)
 		}
-		return locationAreas, nil
+		return encounters, nil
 	}
 
 	res, err := http.Get(url)
@@ -40,16 +40,15 @@ func GetPokemonsAtLocation(url string) (EncounterResponse, error) {
 		return EncounterResponse{}, fmt.Errorf("error reading response body: %w", err)
 	}
 
-	// NOTE: check if the request actually succeeded
 	if res.StatusCode != http.StatusOK {
 		return EncounterResponse{}, fmt.Errorf("unexpected status code: %d %s", res.StatusCode, http.StatusText(res.StatusCode))
 	}
 
 	SharedCache.Add(url, body)
 
-	locationAreas := EncounterResponse{}
-	if err := json.Unmarshal(body, &locationAreas); err != nil {
+	encounters := EncounterResponse{}
+	if err := json.Unmarshal(body, &encounters); err != nil {
 		return EncounterResponse{}, fmt.Errorf("error unmarshaling json: %w", err)
 	}
-	return locationAreas, nil
+	return encounters, nil
 }
